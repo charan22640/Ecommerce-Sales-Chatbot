@@ -1,0 +1,52 @@
+name: ecommerce-sales-bot
+services:
+- name: backend
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: your-username/ecommercesalesbot
+  build_command: pip install -r requirements.txt
+  run_command: gunicorn -c gunicorn.conf.py wsgi:application
+  http_port: 5000
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  envs:
+  - key: FLASK_ENV
+    value: production
+  - key: DATABASE_URL
+    value: ${db.DATABASE_URL}
+  - key: REDIS_URL
+    value: ${redis.REDIS_URL}
+  - key: JWT_SECRET_KEY
+    type: SECRET
+    value: your-secure-jwt-key
+  - key: SENTRY_DSN
+    type: SECRET
+    value: your-sentry-dsn
+
+- name: frontend
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: your-username/ecommercesalesbot
+  build_command: npm install && npm run build
+  run_command: npm start
+  http_port: 3000
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  envs:
+  - key: REACT_APP_API_URL
+    value: ${backend.URL}
+
+databases:
+- engine: PG
+  name: db
+  production: false
+  cluster_name: ecommerce-db
+  db_name: ecommerce_db
+  db_user: ecommerce_user
+
+redis:
+- name: redis
+  production: false
+  cluster_name: ecommerce-redis 
