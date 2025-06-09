@@ -2,189 +2,324 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Enhanced animations and styles for chat suggestions */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+/* Layout styles for chat interface */
+.chat-container {
+  height: calc(100vh - 64px); /* Adjust height to account for navbar only (removed chat navbar) */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  max-width: 100vw;
+  margin: 0;
+  border-radius: 0;
+  border: none;
+  background-color: transparent;
+}
+
+.chat-messages-container {
+  flex: 1;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  padding-bottom: 10px;
+  -ms-overflow-style: none; /* Hide scrollbar IE and Edge */
+  scrollbar-width: thin; /* Thin scrollbar for Firefox */
+}
+
+/* Custom scrollbar for WebKit browsers */
+.chat-messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages-container::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.5);
+}
+
+.chat-messages-container::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.5);
+  border-radius: 6px;
+  border: 2px solid transparent;
+}
+
+.chat-input-container {
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  background-color: white;
+  z-index: 10;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Sliding navbar styles */
+.navbar-wrapper {
+  position: relative;
+  z-index: 50;
+  width: 100%;
+  max-width: 100%;
+}
+
+.sliding-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  max-width: 100vw;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s linear;
+  will-change: transform;
+  /* Enforce hardware acceleration */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transform: translateZ(0) translateY(0);
+  -moz-transform: translateZ(0) translateY(0);
+  -ms-transform: translateZ(0) translateY(0);
+  -o-transform: translateZ(0) translateY(0);
+  transform: translateZ(0) translateY(0);
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.navbar-visible {
+  transform: translateY(0);
+  visibility: visible;
+  opacity: 1;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0s linear 0s,
+              opacity 0.3s ease;
+}
+
+.navbar-hidden {
+  transform: translateY(-100%);
+  visibility: hidden;
+  opacity: 0.6;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 1, 1),
+              visibility 0s linear 0.4s,
+              opacity 0.3s ease;
+}
+
+/* Adjust chat main content to account for fixed navbar */
+.chat-main-content {
+  transition: padding-top 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.navbar-visible + .chat-main-content {
+  padding-top: 64px; /* Height of the navbar */
+}
+
+.navbar-hidden + .chat-main-content {
+  padding-top: 0;
+}
+
+/* Ensure the chat container uses the full height */
+.chat-container-expanded {
+  height: 100vh;
+}
+
+/* Special chat container that works with sliding navbar */
+.chat-container-with-sliding-navbar {
+  height: calc(100vh - 64px);
+  transition: height 0.3s ease-in-out;
+}
+
+/* When navbar is hidden, expand chat container */
+.navbar-hidden + .chat-main-content .chat-container-with-sliding-navbar {
+  height: 100vh;
+}
+
+/* Add touch handling optimization for mobile */
+@media (pointer: coarse) {
+  .sliding-navbar {
+    transition: transform 0.2s ease-out;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
+/* Make sure chat messages adjust to expanded container */
+.navbar-hidden + .chat-main-content .chat-messages-container {
+  min-height: calc(100vh - 61px); /* Adjust for the input area height */
 }
 
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.suggestion-card {
-  animation: fadeInUp 0.3s ease-out;
-}
-
-.suggestion-card:nth-child(1) { animation-delay: 0.1s; }
-.suggestion-card:nth-child(2) { animation-delay: 0.2s; }
-.suggestion-card:nth-child(3) { animation-delay: 0.3s; }
-.suggestion-card:nth-child(4) { animation-delay: 0.4s; }
-.suggestion-card:nth-child(5) { animation-delay: 0.5s; }
-.suggestion-card:nth-child(6) { animation-delay: 0.6s; }
-
-.message-slide-in {
-  animation: slideInRight 0.4s ease-out;
-}
-
-.quick-action-pulse {
-  animation: pulse 2s infinite;
-}
-
-/* Gradient text effect */
-.gradient-text {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Glassmorphism effect for suggestion cards */
-.glass-card {
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-/* Hover glow effect */
-.hover-glow:hover {
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-}
-
-/* Typing indicator enhancement */
+/* Typing indicator animation */
 .typing-dot {
-  animation: typing 1.4s infinite ease-in-out;
+  width: 6px;
+  height: 6px;
+  background-color: rgba(99, 102, 241, 0.7);
+  border-radius: 50%;
+  display: inline-block;
+  margin: 0 1px;
+  animation: typingBounce 1.4s infinite ease-in-out both;
 }
 
-.typing-dot:nth-child(1) { animation-delay: 0.2s; }
-.typing-dot:nth-child(2) { animation-delay: 0.4s; }
-.typing-dot:nth-child(3) { animation-delay: 0.6s; }
+.typing-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
 
-@keyframes typing {
-  0%, 60%, 100% {
-    transform: translateY(0);
+.typing-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+/* Chat send button styling */
+.chat-send-button {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+  transition: all 0.3s ease;
+}
+
+.chat-send-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  box-shadow: 0 6px 10px -1px rgba(79, 70, 229, 0.5);
+}
+
+.chat-send-button:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Compact chat header styling */
+.chat-header {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  height: auto;
+}
+
+.chat-header-logo {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.chat-header h1 {
+  font-size: 1.25rem;
+  line-height: 1.5rem;
+}
+
+.chat-header p {
+  font-size: 0.75rem;
+}
+
+/* Message bubbles and containers */
+.message-bubble {
+  max-width: 85%;
+}
+
+/* For full width chat container */
+.chat-messages-container {
+  width: 100%;
+  max-width: 100%;
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+}
+
+/* Enhanced first message with assistant info */
+.message-bubble.first-bot-message {
+  background: linear-gradient(to right bottom, rgba(255, 255, 255, 0.9), rgba(249, 250, 251, 0.9));
+  border-color: rgba(147, 197, 253, 0.3);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+}
+
+/* First message header with assistant info */
+.assistant-info-banner {
+  background: linear-gradient(to right bottom, #EFF6FF, #EEF2FF);
+  border: 1px solid rgba(147, 197, 253, 0.3);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Bot badge styling */
+.bot-badge {
+  font-size: 0.7rem;
+  background-color: rgba(99, 102, 241, 0.1);
+  color: rgb(79, 70, 229);
+  padding: 0.15rem 0.5rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  font-weight: 500;
+}
+
+/* Status badges */
+.status-badge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 1rem;
+  border-width: 1px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-badge-green {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: rgb(5, 150, 105);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.status-badge-blue {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: rgb(37, 99, 235);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.status-badge-purple {
+  background-color: rgba(124, 58, 237, 0.1);
+  color: rgb(109, 40, 217);
+  border-color: rgba(124, 58, 237, 0.2);
+}
+
+/* Feature category tags */
+.feature-tag {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 1rem;
+  border-width: 1px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Special styling for assistant info in welcome message */
+.assistant-welcome-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(to right bottom, rgba(239, 246, 255, 0.5), rgba(238, 242, 255, 0.5));
+  border: 1px solid rgba(147, 197, 253, 0.2);
+}
+
+/* Responsive adjustments for chat interface */
+@media (max-width: 768px) {
+  .message-bubble {
+    max-width: 90%;
   }
-  30% {
-    transform: translateY(-10px);
+  
+  .chat-messages-container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  
+  .chat-input-container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 }
 
-/* NextechAI Brand Animations & Styling */
-@keyframes nextechGlow {
-  0%, 100% {
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 25px rgba(59, 130, 246, 0.6);
-  }
+/* Better formatting for message content */
+.message-content {
+  line-height: 1.6;
+  font-size: 0.9375rem;
+  white-space: pre-wrap;
 }
 
-@keyframes nextechPulse {
-  0%, 100% {
-    transform: scale(1);
-    filter: brightness(1);
-  }
-  50% {
-    transform: scale(1.02);
-    filter: brightness(1.1);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -468px 0;
-  }
-  100% {
-    background-position: 468px 0;
-  }
-}
-
-/* NextechAI specific classes */
-.nextech-gradient {
-  background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #EC4899 100%);
-}
-
-.nextech-text-gradient {
-  background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #EC4899 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.nextech-logo-glow {
-  animation: nextechGlow 3s ease-in-out infinite;
-}
-
-.nextech-card-hover:hover {
-  animation: nextechPulse 0.3s ease-in-out;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 50%, rgba(236, 72, 153, 0.1) 100%);
-}
-
-.nextech-shimmer {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(59, 130, 246, 0.4),
-    transparent
-  );
-  background-size: 468px 100%;
-  animation: shimmer 2s infinite linear;
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.6s ease-out;
-}
-
-/* Enhanced suggestion cards with NextechAI branding */
-.nextech-suggestion-card {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 50%, rgba(236, 72, 153, 0.05) 100%);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.nextech-suggestion-card:hover {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 50%, rgba(236, 72, 153, 0.1) 100%);
-  border-color: rgba(139, 92, 246, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
-}
-
-/* Loading animation for NextechAI */
-.nextech-loading {
-  background: linear-gradient(90deg, #3B82F6, #8B5CF6, #EC4899, #3B82F6);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite linear;
+/* Special styling for user messages */
+.message-user {
+  background: linear-gradient(to bottom right, #3b82f6, #6366f1);
+  color: white;
+  border-color: rgba(99, 102, 241, 0.4);
 }

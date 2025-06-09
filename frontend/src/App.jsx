@@ -6,11 +6,13 @@ import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Home from './pages/Home';
 import Chat from './pages/Chat';
 import Cart from './pages/Cart';
 import Orders from './pages/Orders';
 import Products from './pages/Products';
 import Layout from './components/Layout';
+import ChatLayout from './components/ChatLayout';
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -29,17 +31,25 @@ function App() {
         <div className="min-h-screen bg-gray-50">          <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/test-cors" element={<CorsTest />} />
-            <Route
+            <Route path="/test-cors" element={<CorsTest />} />            <Route
               path="/"
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <Chat />
+                    <Home />
                   </Layout>
                 </ProtectedRoute>
               }
             />            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute>
+                  <ChatLayout>
+                    <Chat />
+                  </ChatLayout>
+                </ProtectedRoute>
+              }
+            /><Route
               path="/cart"
               element={
                 <ProtectedRoute>

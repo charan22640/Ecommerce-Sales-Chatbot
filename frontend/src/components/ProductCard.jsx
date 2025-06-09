@@ -24,11 +24,10 @@ export default function ProductCard({ product }) {
     } finally {
       setLoading(false);
     }
-  };
-  return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden h-full flex flex-col">
+  };  return (
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full flex flex-col">
       {/* Product Image */}
-      <div className="relative aspect-square w-full overflow-hidden bg-gray-200">
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-200">
         <img
           src={product.image_url.startsWith('http') 
             ? product.image_url 
@@ -49,56 +48,38 @@ export default function ProductCard({ product }) {
       </div>
 
       {/* Product Info */}
-      <div className="p-4 flex-1 flex flex-col">
-        <h3 className="text-sm font-medium text-gray-900 line-clamp-2">{product.name}</h3>
+      <div className="p-3 flex-1 flex flex-col">
+        <h3 className="text-xs font-medium text-gray-900 line-clamp-1">{product.name}</h3>
         
         {/* Price */}
-        <p className="mt-2 text-lg font-bold text-gray-900">
+        <p className="mt-1 text-base font-bold text-gray-900">
           ${product.price.toFixed(2)}
         </p>
 
-        {/* Categories */}
-        {product.subcategory && (
-          <div className="mt-1 text-sm text-gray-500">
-            {product.category} - {product.subcategory}
-          </div>
-        )}
-
         {/* Rating */}
-        <div className="mt-2 flex items-center">
+        <div className="mt-1 flex items-center">
           {[0, 1, 2, 3, 4].map((rating) => (
             <StarIcon
               key={rating}
-              className={`h-4 w-4 flex-shrink-0 ${
+              className={`h-3 w-3 flex-shrink-0 ${
                 product.rating > rating ? 'text-yellow-400' : 'text-gray-200'
               }`}
               aria-hidden="true"
             />
           ))}
-          <span className="ml-1 text-sm text-gray-500">
+          <span className="ml-1 text-xs text-gray-500">
             ({product.rating.toFixed(1)})
           </span>
         </div>
 
-        {/* Additional Info Tags */}
-        <div className="mt-3 flex flex-wrap gap-1">
-          <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-1 text-xs font-medium text-primary-700">
-            {product.category}
-          </span>
-          {product.style && (
-            <span className="inline-flex items-center rounded-full bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600">
-              {product.style}
-            </span>
-          )}
-          {product.color && (
-            <span className="inline-flex items-center rounded-full bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600">
-              {product.color}
-            </span>
-          )}
+        {/* Condensed Info */}
+        <div className="mt-1 text-xs text-gray-500 line-clamp-1">
+          {product.category}{product.subcategory ? ` - ${product.subcategory}` : ''}
+          {product.color ? ` • ${product.color}` : ''}
         </div>
 
         {/* Stock Status */}
-        <div className="mt-3 text-sm">
+        <div className="mt-1 text-xs">
           {product.stock_quantity > 0 ? (
             <span className="text-green-600 font-medium">{product.stock_quantity} in stock</span>
           ) : (
@@ -110,12 +91,12 @@ export default function ProductCard({ product }) {
         <button
           onClick={addToCart}
           disabled={loading || product.stock_quantity === 0}
-          className={`mt-4 w-full rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors
+          className={`mt-2 w-full rounded-md px-2 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors
             ${loading 
               ? 'bg-gray-400 cursor-not-allowed'
               : product.stock_quantity === 0
                 ? 'bg-gray-300 cursor-not-allowed'
-                : 'bg-primary-600 hover:bg-primary-700 active:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2'
+                : 'bg-primary-600 hover:bg-primary-700 active:bg-primary-800 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:ring-offset-1'
             }`}
         >
           {loading ? 'Adding...' : product.stock_quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
