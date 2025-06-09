@@ -5,6 +5,11 @@ Creates a comprehensive database with realistic electronics products
 """
 import os
 import sys
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Add the backend directory to the Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -18,6 +23,7 @@ from datetime import datetime
 
 def create_sample_users():
     """Create sample users for testing."""
+    print("Creating sample users...")
     users = [
         {
             'username': 'admin',
@@ -85,42 +91,48 @@ def main():
     app = create_app()
     
     with app.app_context():
-        print("📊 Creating database tables...")
-        db.create_all()
-        
-        print("👥 Creating sample users...")
-        users = create_sample_users()
-        
-        print("🛍️  Creating products...")
-        products = create_products()
-        
-        # Commit all changes
         try:
-            db.session.commit()
-            print(f"\n🎉 Database seeding completed successfully!")
-            print(f"📊 Created {len(users)} users")
-            print(f"🛍️  Created {len(products)} products")
-            print("\n📋 Summary of products by category:")
+            logger.info("Creating database tables...")
+            db.create_all()
             
-            # Show summary
-            categories = {}
-            for product in products:
-                category = product.category
-                if category not in categories:
-                    categories[category] = 0
-                categories[category] += 1
+            logger.info("Creating sample users...")
+            users = create_sample_users()
             
-            for category, count in categories.items():
-                print(f"   {category}: {count} products")
+            logger.info("Creating products...")
+            products = create_products()
+            
+            # Commit all changes
+            try:
+                logger.info("Committing changes to database...")
+                db.session.commit()
+                print(f"\n🎉 Database seeding completed successfully!")
+                print(f"📊 Created {len(users)} users")
+                print(f"🛍️  Created {len(products)} products")
+                print("\n📋 Summary of products by category:")
                 
-            print(f"\n🔐 Sample login credentials:")
-            print(f"   Admin: admin@techub.com / admin123")
-            print(f"   User: test@example.com / password123")
-            print(f"\n✅ Database is ready for use!")
-            
+                # Show summary
+                categories = {}
+                for product in products:
+                    category = product.category
+                    if category not in categories:
+                        categories[category] = 0
+                    categories[category] += 1
+                
+                for category, count in categories.items():
+                    print(f"   {category}: {count} products")
+                    
+                print(f"\n🔐 Sample login credentials:")
+                print(f"   Admin: admin@techub.com / admin123")
+                print(f"   User: test@example.com / password123")
+                print(f"\n✅ Database is ready for use!")
+                
+            except Exception as e:
+                logger.error(f"Error committing to database: {e}")
+                db.session.rollback()
+                return False
+        
         except Exception as e:
-            print(f"❌ Error committing to database: {e}")
-            db.session.rollback()
+            logger.error(f"Error during database seeding: {e}")
             return False
     
     return True
