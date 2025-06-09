@@ -4,6 +4,8 @@ from config import config
 
 # Get the environment from environment variable, default to development
 env = os.getenv('FLASK_ENV', 'development')
+if env not in config:
+    env = 'production'  # Force production if invalid environment
 app = create_app(env)
 
 if __name__ == '__main__':

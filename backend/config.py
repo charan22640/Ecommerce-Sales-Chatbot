@@ -11,9 +11,14 @@ class Config:
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'your-jwt-secret-key-here')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)    # Database
-    database_url = os.getenv('DATABASE_URL', 'postgresql://localhost/ecommerce_db')
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    database_url = os.getenv('DATABASE_URL')
+    if database_url:
+        # Handle Render's postgres:// URL format
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    else:
+        # Local development fallback
+        database_url = 'postgresql://localhost/ecommerce_db'
     SQLALCHEMY_DATABASE_URI = database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     

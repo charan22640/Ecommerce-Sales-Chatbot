@@ -132,9 +132,18 @@ def create_app(config_name='default'):
                 '/api/orders'
             ]
         })
-    
-    # Create database tables
-    with app.app_context():
-        db.create_all()
+      # Create database tables if in development
+    if config_name != 'production':
+        with app.app_context():
+            db.create_all()
+    else:
+        # In production, use Flask-Migrate to handle database changes
+        with app.app_context():
+            try:
+                db.create_all()
+            except Exception as e:
+                print(f"Database initialization error: {e}")
+                # Continue anyway as tables might already exist
+                pass
     
     return app
