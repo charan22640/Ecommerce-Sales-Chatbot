@@ -25,26 +25,42 @@ export default function Chat() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check authentication on component mount
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      navigate('/login', { state: { from: '/chat' } });
-      return;
-    }
+    const checkAuth = async () => {
+      const token = localStorage.getItem('access_token');
+      if (!token || !user) {
+        navigate('/login', { state: { from: '/chat' } });
+        return;
+      }
 
-    try {
-      const decoded = jwtDecode(token);
-      if (decoded.exp * 1000 < Date.now()) {
+      try {
+        // Verify token is valid
+        const decoded = jwtDecode(token);
+        if (decoded.exp * 1000 <= Date.now()) {
+          // Token is expired
+          const refresh_token = localStorage.getItem('refresh_token');
+          if (!refresh_token) {
+            throw new Error('No refresh token available');
+          }
+
+          // Try to refresh the token
+          const response = await api.post('/auth/refresh', {}, {
+            headers: { Authorization: `Bearer ${refresh_token}` }
+          });
+
+          const { access_token } = response.data;
+          localStorage.setItem('access_token', access_token);
+          api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+        }
+      } catch (error) {
+        console.error('Auth error:', error);
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         navigate('/login', { state: { from: '/chat' } });
       }
-    } catch (error) {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      navigate('/login', { state: { from: '/chat' } });
-    }
-  }, [navigate]);
+    };
+
+    checkAuth();
+  }, [user, navigate]);
 
   const generateSuggestions = (lastMessage, conversationType, products = []) => {
     if (!lastMessage || !lastMessage.is_bot || !lastMessage.message) return [];

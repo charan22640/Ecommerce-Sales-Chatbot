@@ -1,5 +1,19 @@
 import axios from 'axios';
 
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   headers: {
@@ -33,9 +47,10 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // If error is 401 and we haven't tried to refresh token yet
-    if (error.response?.status === 401 && !originalRequest._retry && localStorage.getItem('refresh_token')) {
+    // If error is 401 and we haven't tried to refresh token yet and there's a refresh token
+    if (error.response?.status === 401 && !originalRequest._retry && !isRefreshing && localStorage.getItem('refresh_token')) {
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
         const refresh_token = localStorage.getItem('refresh_token');
