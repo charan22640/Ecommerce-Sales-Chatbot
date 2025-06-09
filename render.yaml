@@ -10,14 +10,13 @@ services:
     env: node
     buildCommand: cd frontend && npm install && npm run build
     startCommand: cd frontend && npm start
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://ecommerce-backend.onrender.com
     plan: free
 
 databases:
   - name: ecommerce-db
     databaseName: ecommerce
     user: ecommerce_user
-    plan: free
-
-redis:
-  - name: ecommerce-redis
     plan: free 
