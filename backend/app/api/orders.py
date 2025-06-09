@@ -95,10 +95,17 @@ def create_order():
         )
         db.session.add(order)
         db.session.flush()  # Get order ID
-        
-        # Create order items from cart items
+          # Create order items from cart items and update product stock
         for cart_item in cart.items:
             if cart_item.product:
+                # Check if there's enough stock
+                if cart_item.product.stock_quantity < cart_item.quantity:
+                    db.session.rollback()
+                    return jsonify({
+                        'error': f'Insufficient stock for {cart_item.product.name}. Only {cart_item.product.stock_quantity} available.'
+                    }), 400
+                
+                # Create order item
                 order_item = OrderItem(
                     order_id=order.id,
                     product_id=cart_item.product_id,
@@ -106,6 +113,9 @@ def create_order():
                     price=cart_item.product.price
                 )
                 db.session.add(order_item)
+                
+                # Update product stock quantity
+                cart_item.product.stock_quantity -= cart_item.quantity
         
         # Clear cart
         CartItem.query.filter_by(cart_id=cart.id).delete()

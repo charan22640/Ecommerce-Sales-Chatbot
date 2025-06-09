@@ -17,10 +17,10 @@ export default function ProductCard({ product }) {
         product_id: product.id,
         quantity: 1
       });
-      toast.success('Added to cart successfully!');
-    } catch (error) {
+      toast.success('Added to cart successfully!');    } catch (error) {
       console.error('Error adding to cart:', error);
-      toast.error(error.response?.data?.message || 'Failed to add item to cart');
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to add item to cart';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

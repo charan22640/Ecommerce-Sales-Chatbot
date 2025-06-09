@@ -37,7 +37,6 @@ export const AuthProvider = ({ children }) => {
     }
     setLoading(false);
   }, []);
-
   const login = async (username, password) => {
     try {
       const response = await api.post('/auth/login', { username, password });
@@ -46,6 +45,9 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
       api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+      
+      // Clear any cached cart data from previous user
+      localStorage.removeItem('cart_cache');
       
       setUser(user);
       return user;
@@ -73,10 +75,10 @@ export const AuthProvider = ({ children }) => {
       throw error.response?.data?.error || 'Registration failed';
     }
   };
-
   const logout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('cart_cache'); // Clear cart cache on logout
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
   };

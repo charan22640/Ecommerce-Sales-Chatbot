@@ -88,3 +88,88 @@ def add_to_cart():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@cart_bp.route('/items/<int:item_id>', methods=['PUT', 'OPTIONS'])
+def update_cart_item(item_id):
+    """Update cart item quantity"""
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'})
+    
+    try:
+        verify_jwt_in_request()
+        user_id = get_jwt_identity()
+        
+        data = request.get_json()
+        if not data or 'quantity' not in data:
+            return jsonify({'error': 'Quantity is required'}), 400
+        
+        quantity = data['quantity']
+        if quantity < 0:
+            return jsonify({'error': 'Quantity cannot be negative'}), 400
+        
+        # Get user's cart
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        cart = user.cart
+        if not cart:
+            return jsonify({'error': 'Cart not found'}), 404
+        
+        # Find the cart item
+        cart_item = CartItem.query.filter_by(cart_id=cart.id, id=item_id).first()
+        if not cart_item:
+            return jsonify({'error': 'Cart item not found'}), 404
+        
+        if quantity == 0:
+            # Remove item if quantity is 0
+            db.session.delete(cart_item)
+        else:
+            cart_item.quantity = quantity
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Cart item updated',
+            'cart': cart.to_dict()
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@cart_bp.route('/items/<int:item_id>', methods=['DELETE', 'OPTIONS'])
+def remove_from_cart(item_id):
+    """Remove item from cart"""
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'})
+    
+    try:
+        verify_jwt_in_request()
+        user_id = get_jwt_identity()
+        
+        # Get user's cart
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        cart = user.cart
+        if not cart:
+            return jsonify({'error': 'Cart not found'}), 404
+        
+        # Find the cart item
+        cart_item = CartItem.query.filter_by(cart_id=cart.id, id=item_id).first()
+        if not cart_item:
+            return jsonify({'error': 'Cart item not found'}), 404
+        
+        db.session.delete(cart_item)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Item removed from cart',
+            'cart': cart.to_dict()
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
