@@ -36,15 +36,22 @@ export const AuthProvider = ({ children }) => {
       }
     }
     setLoading(false);
-  }, []);
-  const login = async (username, password) => {
+  }, []);  const login = async (username, password) => {
     try {
       const response = await api.post('/auth/login', { username, password });
       const { access_token, refresh_token, user } = response.data;
       
+      if (!access_token || !refresh_token) {
+        throw new Error('Invalid response from server');
+      }
+      
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
       api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+      
+      // Set the user state
+      const decoded = jwtDecode(access_token);
+      setUser(decoded);
       
       // Clear any cached cart data from previous user
       localStorage.removeItem('cart_cache');

@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
+import { jwtDecode } from 'jwt-decode';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   ChatBubbleLeftEllipsisIcon, 
   SparklesIcon, 
@@ -16,13 +19,37 @@ export default function Chat() {
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
+  const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  // Dynamic suggestion system
+  useEffect(() => {
+    // Check authentication on component mount
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      navigate('/login', { state: { from: '/chat' } });
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode(token);
+      if (decoded.exp * 1000 < Date.now()) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        navigate('/login', { state: { from: '/chat' } });
+      }
+    } catch (error) {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      navigate('/login', { state: { from: '/chat' } });
+    }
+  }, [navigate]);
+
   const generateSuggestions = (lastMessage, conversationType, products = []) => {
-    if (!lastMessage || !lastMessage.is_bot) return [];
+    if (!lastMessage || !lastMessage.is_bot || !lastMessage.message) return [];
 
-    const messageText = lastMessage.message.toLowerCase();
+    const messageText = String(lastMessage.message).toLowerCase();
     const hasProducts = products && products.length > 0;
 
     // Base suggestions that are always relevant
@@ -174,56 +201,77 @@ export default function Chat() {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
-  const handleSubmit = async (e, suggestionText = null) => {
+  }, [messages]);  const handleSubmit = async (e, suggestionText = null) => {
     e.preventDefault();
     const messageText = suggestionText || input.trim();
     if (!messageText || loading) return;
 
     if (!suggestionText) setInput('');
     setLoading(true);
-
-    // Add user message to chat
-    setMessages(prev => [...prev, {
-      message: messageText,
-      is_bot: false,
-      created_at: new Date().toISOString(),
-      products: []
-    }]);
-
-    // Clear suggestions temporarily while loading
-    setSuggestions([]);
+    setError(null);
 
     try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      // Add user message to chat immediately
+      const userMessage = {
+        message: messageText,
+        is_bot: false,
+        created_at: new Date().toISOString(),
+        products: []
+      };
+      setMessages(prev => [...prev, userMessage]);
+
+      // Clear suggestions while waiting for response
+      setSuggestions([]);
+
+      // Send message to backend
       const response = await api.post('/chat/message', {
         message: messageText,
         session_id: sessionId
       });
 
-      // Update session ID if it's a new conversation
-      if (!sessionId) {
-        setSessionId(response.data.session_id);
-      }      // Add bot response to chat
-      const botMessage = {
-        message: response.data.message,
-        is_bot: true,
-        created_at: new Date().toISOString(),
-        products: response.data.products || [],
-        conversation_type: response.data.conversation_type || 'general',
-        total_found: response.data.total_found || 0,
-        suggestions: response.data.suggestions || []
-      };
+      if (response.data) {
+        // Add bot response to chat
+        const botMessage = {
+          message: response.data.message || 'I apologize, but I encountered an error processing your request.',
+          is_bot: true,
+          created_at: new Date().toISOString(),
+          products: response.data.products || [],
+          conversation_type: response.data.conversation_type || 'general',
+          total_found: response.data.total_found || 0,
+          suggestions: response.data.suggestions || []
+        };
 
-      setMessages(prev => [...prev, botMessage]);
+        setMessages(prev => [...prev, botMessage]);
 
+        // Update session ID if it's a new conversation
+        if (!sessionId && response.data.session_id) {
+          setSessionId(response.data.session_id);
+        }
+      }
     } catch (error) {
-      console.error('Error sending message:', error);
-      setMessages(prev => [...prev, {
-        message: 'Sorry, I encountered an error. Please try again.',
+      console.error('Chat error:', error);
+      setError(error.response?.data?.error || 'Failed to send message. Please try again.');
+      
+      if (error.response?.status === 401) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        navigate('/login', { state: { from: '/chat' } });
+      }
+
+      // Add error message to chat
+      const errorMessage = {
+        message: 'I apologize, but I encountered an error. Please try again or log in if you were disconnected.',
         is_bot: true,
         created_at: new Date().toISOString(),
-        products: []
-      }]);
+        products: [],
+        conversation_type: 'error'
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setLoading(false);
     }

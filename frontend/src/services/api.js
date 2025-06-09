@@ -7,7 +7,6 @@ const api = axios.create({
     'Accept': 'application/json',
   },
   withCredentials: true,
-  validateStatus: status => status >= 200 && status < 500,
 });
 
 // Request interceptor for adding auth token
@@ -35,7 +34,7 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // If error is 401 and we haven't tried to refresh token yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && localStorage.getItem('refresh_token')) {
       originalRequest._retry = true;
 
       try {
