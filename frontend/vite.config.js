@@ -14,7 +14,8 @@ export default defineConfig({
           ui: ['@headlessui/react', '@heroicons/react']
         }
       }
-    }
+    },
+    chunkSizeWarningLimit: 1000
   },
   server: {
     port: 5173,
