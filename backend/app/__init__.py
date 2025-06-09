@@ -7,28 +7,57 @@ from config import config
 
 def create_app(config_name='default'):
     app = Flask(__name__)
-      # Load configuration
+    
+    # Store config name for use throughout the function
+    app.config_name = config_name
+    
+    # Load configuration
     app.config.from_object(config[config_name])
-    app.config['SQLALCHEMY_ECHO'] = True  # Enable SQL query logging
-    app.config['DEBUG'] = True  # Enable debug mode
-    app.config['PROPAGATE_EXCEPTIONS'] = True  # Show detailed errors
+    
+    # Set configuration based on environment
+    if config_name == 'production':
+        app.config['SQLALCHEMY_ECHO'] = False
+        app.config['DEBUG'] = False
+    else:
+        app.config['SQLALCHEMY_ECHO'] = True
+        app.config['DEBUG'] = True
+    
+    app.config['PROPAGATE_EXCEPTIONS'] = True
     config[config_name].init_app(app)
-      # Initialize extensions
+    
+    # Initialize extensions
     db.init_app(app)  # Initialize SQLAlchemy first
     
-    # Configure CORS
-    CORS(app,
-         origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"],
-         allow_credentials=True,
-         supports_credentials=True,
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-         expose_headers=["Content-Range", "X-Content-Range"])
-      # Add after_request handler to ensure CORS headers are always present
+    # Configure CORS based on environment
+    if config_name == 'production':
+        # Production CORS - allow your frontend domain
+        CORS(app,
+             origins=["https://ecommerce-frontend.onrender.com", "https://*.onrender.com"],
+             allow_credentials=True,
+             supports_credentials=True,
+             methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+             allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+             expose_headers=["Content-Range", "X-Content-Range"])
+    else:
+        # Development CORS
+        CORS(app,
+             origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"],
+             allow_credentials=True,
+             supports_credentials=True,
+             methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+             allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+             expose_headers=["Content-Range", "X-Content-Range"])    # Add after_request handler to ensure CORS headers are always present
     @app.after_request
     def after_request(response):
         origin = request.headers.get('Origin')
-        if origin in ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174']:
+        if config_name == 'production':
+            allowed_origins = ['https://ecommerce-frontend.onrender.com']
+            if origin and any(origin.endswith(domain) for domain in ['.onrender.com']):
+                allowed_origins.append(origin)
+        else:
+            allowed_origins = ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174']
+        
+        if origin in allowed_origins:
             response.headers['Access-Control-Allow-Origin'] = origin
             response.headers['Access-Control-Allow-Credentials'] = 'true'
             response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
@@ -41,7 +70,14 @@ def create_app(config_name='default'):
         if request.method == "OPTIONS":
             response = jsonify({'status': 'ok'})
             origin = request.headers.get('Origin')
-            if origin in ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174']:
+            if config_name == 'production':
+                allowed_origins = ['https://ecommerce-frontend.onrender.com']
+                if origin and any(origin.endswith(domain) for domain in ['.onrender.com']):
+                    allowed_origins.append(origin)
+            else:
+                allowed_origins = ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174']
+            
+            if origin in allowed_origins:
                 response.headers['Access-Control-Allow-Origin'] = origin
                 response.headers['Access-Control-Allow-Credentials'] = 'true'
                 response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'

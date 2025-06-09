@@ -1,21 +1,23 @@
 import multiprocessing
 import os
 
-# Server socket
-bind = "0.0.0.0:5000"
+# Server socket - Use PORT from environment (Render requirement)
+port = os.getenv('PORT', '5000')
+bind = f"0.0.0.0:{port}"
 backlog = 2048
 
-# Worker processes
-workers = multiprocessing.cpu_count() * 2 + 1
-worker_class = 'gevent'
+# Worker processes - Limit for free tier
+workers = min(multiprocessing.cpu_count() * 2 + 1, 4)
+worker_class = 'gevent'  # Using gevent for better performance with async operations
 worker_connections = 1000
-timeout = 30
+timeout = 120  # Increased timeout for production
 keepalive = 2
 
 # Logging
 accesslog = '-'
 errorlog = '-'
 loglevel = 'info'
+capture_output = True
 
 # Process naming
 proc_name = 'ecommerce_sales_bot'

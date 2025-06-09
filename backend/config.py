@@ -70,15 +70,18 @@ class ProductionConfig(Config):
     SESSION_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_HTTPONLY = True
     
-    # Database
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+    # Database - Fix for Render PostgreSQL URL format
+    database_url = os.getenv('DATABASE_URL')
+    if database_url and database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    SQLALCHEMY_DATABASE_URI = database_url
     
     # Redis
     REDIS_URL = os.getenv('REDIS_URL')
     
     # Celery
-    CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
-    CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
+    CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', os.getenv('REDIS_URL'))
+    CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', os.getenv('REDIS_URL'))
     
     @classmethod
     def init_app(cls, app):

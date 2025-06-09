@@ -3,7 +3,7 @@ services:
     name: ecommerce-backend
     env: python
     buildCommand: pip install -r backend/requirements.txt
-    startCommand: cd backend && gunicorn wsgi:application
+    startCommand: cd backend && gunicorn wsgi:application --bind 0.0.0.0:$PORT
     plan: free
     envVars:
       - key: FLASK_ENV
@@ -14,20 +14,30 @@ services:
           property: connectionString
       - key: JWT_SECRET_KEY
         generateValue: true
+      - key: SECRET_KEY
+        generateValue: true
       - key: REDIS_URL
         fromService:
           type: redis
           name: ecommerce-redis
           property: connectionString
-
-  - type: web
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: ecommerce-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: ecommerce-redis
+          property: connectionString  - type: static
     name: ecommerce-frontend
     env: node
     buildCommand: cd frontend && npm install && npm run build
-    startCommand: cd frontend && npm start
+    staticPublishPath: ./frontend/dist
     envVars:
-      - key: REACT_APP_API_URL
-        value: https://ecommerce-backend.onrender.com
+      - key: VITE_API_URL
+        value: https://ecommerce-backend.onrender.com/api
     plan: free
 
 databases:
