@@ -30,11 +30,14 @@ services:
         fromService:
           type: redis
           name: ecommerce-redis
-          property: connectionString  - type: static
+          property: connectionString  - type: web
     name: ecommerce-frontend
     env: node
     buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: ./frontend/dist
+    startCommand: cd frontend && npm run preview
+    envVars:
+      - key: PORT
+        value: 4173
     envVars:
       - key: VITE_API_URL
         value: https://ecommerce-backend.onrender.com/api

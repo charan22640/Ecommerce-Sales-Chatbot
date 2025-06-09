@@ -16,8 +16,9 @@ export default defineConfig({
       }
     },
     chunkSizeWarningLimit: 1000
-  },
-  preview: {
+  },  preview: {
+    port: 4173,
+    host: true,
     allowedHosts: [
       'ecommerce-frontend-1qfw.onrender.com',
       '.onrender.com'
@@ -25,10 +26,6 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    host: true
-  },
-  preview: {
-    port: 4173,
     host: true
   }
 })
