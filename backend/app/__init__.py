@@ -26,14 +26,13 @@ def create_app(config_name='default'):
     config[config_name].init_app(app)
     
     # Initialize extensions
-    db.init_app(app)  # Initialize SQLAlchemy first
-      # Configure CORS based on environment
+    db.init_app(app)  # Initialize SQLAlchemy first    # Configure CORS based on environment
     if config_name == 'production':
         # Production CORS - allow your frontend domain
+        origins = ["https://ecommerce-frontend-1qfw.onrender.com"]
         CORS(app,
-             origins=["https://ecommerce-frontend-1qfw.onrender.com", "https://*.onrender.com"],
+             resources={r"/api/*": {"origins": origins}},
              allow_credentials=True,
-             supports_credentials=True,
              methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
              allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
              expose_headers=["Content-Range", "X-Content-Range"])
@@ -45,42 +44,44 @@ def create_app(config_name='default'):
              supports_credentials=True,
              methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
              allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-             expose_headers=["Content-Range", "X-Content-Range"])    # Add after_request handler to ensure CORS headers are always present
-    @app.after_request
+             expose_headers=["Content-Range", "X-Content-Range"])    # Add after_request handler to ensure CORS headers are always present    @app.after_request
     def after_request(response):
         origin = request.headers.get('Origin')
         if config_name == 'production':
-            allowed_origins = ['https://ecommerce-frontend.onrender.com']
-            if origin and any(origin.endswith(domain) for domain in ['.onrender.com']):
-                allowed_origins.append(origin)
-        else:
-            allowed_origins = ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174']
-        
-        if origin in allowed_origins:
-            response.headers['Access-Control-Allow-Origin'] = origin
-            response.headers['Access-Control-Allow-Credentials'] = 'true'
-            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
-        return response
-    
-    # Global OPTIONS handler for preflight requests
-    @app.before_request
-    def handle_preflight():
-        if request.method == "OPTIONS":
-            response = jsonify({'status': 'ok'})
-            origin = request.headers.get('Origin')
-            if config_name == 'production':
-                allowed_origins = ['https://ecommerce-frontend.onrender.com']
-                if origin and any(origin.endswith(domain) for domain in ['.onrender.com']):
-                    allowed_origins.append(origin)
-            else:
-                allowed_origins = ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174']
-            
-            if origin in allowed_origins:
+            if origin == 'https://ecommerce-frontend-1qfw.onrender.com':
                 response.headers['Access-Control-Allow-Origin'] = origin
                 response.headers['Access-Control-Allow-Credentials'] = 'true'
                 response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
                 response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        else:
+            if origin in ['http://localhost:5173', 'http://127.0.0.1:5173']:
+                response.headers['Access-Control-Allow-Origin'] = origin
+                response.headers['Access-Control-Allow-Credentials'] = 'true'
+                response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+                response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        return response
+    
+    # Global OPTIONS handler for preflight requests    @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS":
+            response = jsonify({'status': 'ok'})
+            origin = request.headers.get('Origin')
+            
+            if config_name == 'production':
+                if origin == 'https://ecommerce-frontend-1qfw.onrender.com':
+                    response.headers['Access-Control-Allow-Origin'] = origin
+                    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+                    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+                    response.headers['Access-Control-Allow-Credentials'] = 'true'
+                    return response
+            else:
+                if origin in ['http://localhost:5173', 'http://127.0.0.1:5173']:
+                    response.headers['Access-Control-Allow-Origin'] = origin
+                    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+                    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+                    response.headers['Access-Control-Allow-Credentials'] = 'true'
+                    return response
+            
             return response
       # Initialize JWT
     jwt = JWTManager(app)
