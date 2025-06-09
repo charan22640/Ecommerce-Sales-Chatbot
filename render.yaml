@@ -4,19 +4,12 @@ services:
     env: python
     buildCommand: pip install -r backend/requirements.txt
     startCommand: cd backend && gunicorn wsgi:application
-    envVars:
-      - key: FLASK_ENV
-        value: production
     plan: free
-
   - type: web
     name: ecommerce-frontend
     env: node
     buildCommand: cd frontend && npm install && npm run build
     startCommand: cd frontend && npm start
-    envVars:
-      - key: REACT_APP_API_URL
-        value: https://ecommerce-backend.onrender.com
     plan: free
 
 databases:
