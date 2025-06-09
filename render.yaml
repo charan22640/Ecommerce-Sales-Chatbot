@@ -4,6 +4,7 @@ services:
     env: python
     buildCommand: pip install -r backend/requirements.txt
     startCommand: cd backend && gunicorn wsgi:application
+    postStartCommand: python backend/seed_enhanced_db.py
     plan: free
   - type: web
     name: ecommerce-frontend
