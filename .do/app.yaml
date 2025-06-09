@@ -15,8 +15,6 @@ services:
     value: production
   - key: DATABASE_URL
     value: ${db.DATABASE_URL}
-  - key: REDIS_URL
-    value: ${redis.REDIS_URL}
   - key: JWT_SECRET_KEY
     type: SECRET
     value: your-secure-jwt-key
