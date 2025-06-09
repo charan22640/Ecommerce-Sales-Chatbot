@@ -26,64 +26,47 @@ def create_app(config_name='default'):
     config[config_name].init_app(app)
     
     # Initialize extensions
-    db.init_app(app)  # Initialize SQLAlchemy first    # Configure CORS based on environment
-    if config_name == 'production':
-        # Production CORS - allow your frontend domain
-        origins = ["https://ecommerce-frontend-1qfw.onrender.com"]
-        CORS(app,
-             resources={r"/api/*": {"origins": origins}},
-             allow_credentials=True,
-             methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-             allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-             expose_headers=["Content-Range", "X-Content-Range"])
-    else:
-        # Development CORS
-        CORS(app,
-             origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"],
-             allow_credentials=True,
-             supports_credentials=True,
-             methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-             allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-             expose_headers=["Content-Range", "X-Content-Range"])    # Add after_request handler to ensure CORS headers are always present    @app.after_request
+    db.init_app(app)  # Initialize SQLAlchemy first
+    
+    # Configure CORS
+    CORS(app, 
+         resources={r"/*": {
+             "origins": ["https://ecommerce-frontend-1qfw.onrender.com"],
+             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
+             "supports_credentials": True,
+             "expose_headers": ["Content-Range", "X-Content-Range"]
+         }},
+         supports_credentials=True)
+    
+    # Add after_request handler to ensure CORS headers are always present
+    @app.after_request
     def after_request(response):
         origin = request.headers.get('Origin')
-        if config_name == 'production':
-            if origin == 'https://ecommerce-frontend-1qfw.onrender.com':
-                response.headers['Access-Control-Allow-Origin'] = origin
-                response.headers['Access-Control-Allow-Credentials'] = 'true'
-                response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-                response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
-        else:
-            if origin in ['http://localhost:5173', 'http://127.0.0.1:5173']:
-                response.headers['Access-Control-Allow-Origin'] = origin
-                response.headers['Access-Control-Allow-Credentials'] = 'true'
-                response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-                response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        if origin == 'https://ecommerce-frontend-1qfw.onrender.com':
+            response.headers['Access-Control-Allow-Origin'] = origin
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+            response.headers['Access-Control-Max-Age'] = '3600'
         return response
     
-    # Global OPTIONS handler for preflight requests    @app.before_request
+    # Add OPTIONS handler for preflight requests
+    @app.before_request
     def handle_preflight():
         if request.method == "OPTIONS":
             response = jsonify({'status': 'ok'})
             origin = request.headers.get('Origin')
-            
-            if config_name == 'production':
-                if origin == 'https://ecommerce-frontend-1qfw.onrender.com':
-                    response.headers['Access-Control-Allow-Origin'] = origin
-                    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-                    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
-                    response.headers['Access-Control-Allow-Credentials'] = 'true'
-                    return response
-            else:
-                if origin in ['http://localhost:5173', 'http://127.0.0.1:5173']:
-                    response.headers['Access-Control-Allow-Origin'] = origin
-                    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-                    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
-                    response.headers['Access-Control-Allow-Credentials'] = 'true'
-                    return response
-            
+            if origin == 'https://ecommerce-frontend-1qfw.onrender.com':
+                response.headers['Access-Control-Allow-Origin'] = origin
+                response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+                response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+                response.headers['Access-Control-Allow-Credentials'] = 'true'
+                response.headers['Access-Control-Max-Age'] = '3600'
+                return response
             return response
-      # Initialize JWT
+    
+    # Initialize JWT
     jwt = JWTManager(app)
     
     # Handle JWT errors without redirects
@@ -100,50 +83,23 @@ def create_app(config_name='default'):
         return jsonify({'error': 'Authorization token is required'}), 401
     
     Migrate(app, db)
-
+    
     # Register blueprints
     from .api.auth import auth_bp
-    from .api.chat import chat_bp
-    from .api.products import products_bp
-    from .api.cart import cart_bp
+    from .api.products import product_bp
     from .api.orders import order_bp
+    from .api.cart import cart_bp
+    from .api.chat import chat_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
-    app.register_blueprint(chat_bp, url_prefix='/api/chat')
-    app.register_blueprint(products_bp, url_prefix='/api/products')
-    app.register_blueprint(cart_bp, url_prefix='/api/cart')
+    app.register_blueprint(product_bp, url_prefix='/api/products')
     app.register_blueprint(order_bp, url_prefix='/api/orders')
+    app.register_blueprint(cart_bp, url_prefix='/api/cart')
+    app.register_blueprint(chat_bp, url_prefix='/api/chat')
     
     # Add health check route
     @app.route('/')
     def health_check():
         return jsonify({'status': 'ok', 'message': 'E-commerce API is running'})
-    
-    @app.route('/api')
-    def api_info():
-        return jsonify({
-            'status': 'ok',
-            'message': 'E-commerce API',
-            'endpoints': [
-                '/api/auth/login',
-                '/api/auth/register',
-                '/api/products',
-                '/api/cart',
-                '/api/orders'
-            ]
-        })
-      # Create database tables if in development
-    if config_name != 'production':
-        with app.app_context():
-            db.create_all()
-    else:
-        # In production, use Flask-Migrate to handle database changes
-        with app.app_context():
-            try:
-                db.create_all()
-            except Exception as e:
-                print(f"Database initialization error: {e}")
-                # Continue anyway as tables might already exist
-                pass
     
     return app
