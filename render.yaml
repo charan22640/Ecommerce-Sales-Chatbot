@@ -18,6 +18,9 @@ services:
           type: redis
           name: ecommerce-redis
           property: connectionString
+    github:
+      repo: charan22640/Ecommerce-Sales-Chatbot
+      branch: master
 
   - type: web
     name: ecommerce-frontend
@@ -27,6 +30,9 @@ services:
     envVars:
       - key: REACT_APP_API_URL
         value: https://ecommerce-backend.onrender.com
+    github:
+      repo: charan22640/Ecommerce-Sales-Chatbot
+      branch: master
 
 databases:
   - name: ecommerce-db
