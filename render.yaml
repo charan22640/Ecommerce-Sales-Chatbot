@@ -13,10 +13,9 @@ services:
           name: ecommerce-db
           property: connectionString
       - key: JWT_SECRET_KEY
-        generateValue: true      - key: SECRET_KEY
         generateValue: true
-      - key: GEMINI_API_KEY
-        value: AIzaSyCcU0wVQAPx2eLNUzYOJiPrdmD0afASXww
+      - key: SECRET_KEY
+        generateValue: true
       - key: REDIS_URL
         fromService:
           type: redis
