@@ -4,7 +4,7 @@ from config import config
 
 # Get the environment from environment variable, default to development
 env = os.getenv('FLASK_ENV', 'development')
-app = create_app(config[env])
+app = create_app(env)
 
 if __name__ == '__main__':
     # For development

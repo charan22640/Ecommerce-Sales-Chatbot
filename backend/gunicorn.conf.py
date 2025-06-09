@@ -8,7 +8,7 @@ backlog = 2048
 
 # Worker processes - Limit for free tier
 workers = min(multiprocessing.cpu_count() * 2 + 1, 4)
-worker_class = 'gevent'  # Using gevent for better performance with async operations
+worker_class = 'sync'  # Using sync workers for better compatibility
 worker_connections = 1000
 timeout = 120  # Increased timeout for production
 keepalive = 2

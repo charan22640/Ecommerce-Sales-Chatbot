@@ -50,15 +50,15 @@ class Config:
 class DevelopmentConfig(Config):
     """Development configuration."""
     DEBUG = True
-    TESTING = False
-    
+    SQLALCHEMY_ECHO = True
+
 class TestingConfig(Config):
     """Testing configuration."""
     DEBUG = False
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/ecommerce_test_db'
     WTF_CSRF_ENABLED = False
-    
+
 class ProductionConfig(Config):
     """Production configuration."""
     DEBUG = False
@@ -90,9 +90,10 @@ class ProductionConfig(Config):
         # Production specific configurations
         # Add any production-specific setup here
 
+# Configuration dictionary
 config = {
     'development': DevelopmentConfig,
     'testing': TestingConfig,
     'production': ProductionConfig,
     'default': DevelopmentConfig
-} 
+}
