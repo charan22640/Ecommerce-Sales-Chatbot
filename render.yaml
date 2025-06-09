@@ -21,6 +21,7 @@ services:
     github:
       repo: charan22640/Ecommerce-Sales-Chatbot
       branch: master
+    plan: free
 
   - type: web
     name: ecommerce-frontend
@@ -33,6 +34,7 @@ services:
     github:
       repo: charan22640/Ecommerce-Sales-Chatbot
       branch: master
+    plan: free
 
 databases:
   - name: ecommerce-db
