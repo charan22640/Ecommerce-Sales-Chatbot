@@ -86,13 +86,13 @@ def create_app(config_name='default'):
     
     # Register blueprints
     from .api.auth import auth_bp
-    from .api.products import product_bp
+    from .api.products import products_bp
     from .api.orders import order_bp
     from .api.cart import cart_bp
     from .api.chat import chat_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
-    app.register_blueprint(product_bp, url_prefix='/api/products')
+    app.register_blueprint(products_bp, url_prefix='/api/products')
     app.register_blueprint(order_bp, url_prefix='/api/orders')
     app.register_blueprint(cart_bp, url_prefix='/api/cart')
     app.register_blueprint(chat_bp, url_prefix='/api/chat')
