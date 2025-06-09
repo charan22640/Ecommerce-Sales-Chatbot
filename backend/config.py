@@ -13,7 +13,10 @@ class Config:
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     
     # Database
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'postgresql://localhost/ecommerce_db')
+    database_url = os.getenv('DATABASE_URL', 'postgresql://localhost/ecommerce_db')
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    SQLALCHEMY_DATABASE_URI = database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # File upload
@@ -51,18 +54,11 @@ class DevelopmentConfig(Config):
     """Development configuration."""
     DEBUG = True
     SQLALCHEMY_ECHO = True
-
-class TestingConfig(Config):
-    """Testing configuration."""
-    DEBUG = False
-    TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/ecommerce_test_db'
-    WTF_CSRF_ENABLED = False
-
+    
 class ProductionConfig(Config):
     """Production configuration."""
     DEBUG = False
-    TESTING = False
+    SQLALCHEMY_ECHO = False
     
     # Security
     SESSION_COOKIE_SECURE = True
@@ -93,7 +89,6 @@ class ProductionConfig(Config):
 # Configuration dictionary
 config = {
     'development': DevelopmentConfig,
-    'testing': TestingConfig,
     'production': ProductionConfig,
     'default': DevelopmentConfig
 }
