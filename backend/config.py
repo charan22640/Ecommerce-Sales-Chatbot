@@ -70,6 +70,12 @@ class ProductionConfig(Config):
     SESSION_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_HTTPONLY = True
     
+    # CORS settings for production
+    CORS_ORIGINS = [
+        "https://ecommerce-frontend-1qfw.onrender.com",
+        "https://*.onrender.com"
+    ]
+    
     # Database - Ensure production uses the correct database URL
     @classmethod
     def init_app(cls, app):

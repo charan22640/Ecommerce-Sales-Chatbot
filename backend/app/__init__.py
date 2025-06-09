@@ -27,12 +27,11 @@ def create_app(config_name='default'):
     
     # Initialize extensions
     db.init_app(app)  # Initialize SQLAlchemy first
-    
-    # Configure CORS based on environment
+      # Configure CORS based on environment
     if config_name == 'production':
         # Production CORS - allow your frontend domain
         CORS(app,
-             origins=["https://ecommerce-frontend.onrender.com", "https://*.onrender.com"],
+             origins=["https://ecommerce-frontend-1qfw.onrender.com", "https://*.onrender.com"],
              allow_credentials=True,
              supports_credentials=True,
              methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
