@@ -11,15 +11,9 @@ class Config:
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'your-jwt-secret-key-here')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)    # Database
-    database_url = os.getenv('DATABASE_URL')
-    if database_url:
-        # Handle Render's postgres:// URL format
-        if database_url.startswith('postgres://'):
-            database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    else:
-        # Local development fallback
-        database_url = 'postgresql://localhost/ecommerce_db'
-    SQLALCHEMY_DATABASE_URI = database_url
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'postgresql://localhost/ecommerce_db')
+    if SQLALCHEMY_DATABASE_URI.startswith('postgres://'):
+        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace('postgres://', 'postgresql://', 1)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # File upload
@@ -75,8 +69,14 @@ class ProductionConfig(Config):
     REMEMBER_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_HTTPONLY = True
-      # Database configuration is inherited from Config class
-    pass
+    
+    # Database - Ensure production uses the correct database URL
+    @classmethod
+    def init_app(cls, app):
+        Config.init_app(app)
+        # Ensure database URL is set for production
+        if not app.config['SQLALCHEMY_DATABASE_URI']:
+            raise ValueError("DATABASE_URL must be set in production")
     
     # Redis
     REDIS_URL = os.getenv('REDIS_URL')
