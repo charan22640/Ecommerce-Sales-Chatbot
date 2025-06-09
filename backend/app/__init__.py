@@ -13,7 +13,8 @@ def create_app(config_name='default'):
     
     # Load configuration
     app.config.from_object(config[config_name])
-      # Set configuration based on environment
+    
+    # Set configuration based on environment
     if config_name == 'production':
         app.config['SQLALCHEMY_ECHO'] = False
         app.config['DEBUG'] = False
@@ -124,5 +125,37 @@ def create_app(config_name='default'):
     @app.route('/')
     def health_check():
         return jsonify({'status': 'ok', 'message': 'E-commerce API is running'})
+    
+    # Add database seeding for production
+    if config_name == 'production':
+        with app.app_context():
+            try:
+                # Create tables
+                db.create_all()
+                
+                # Check if products exist
+                from .models.product import Product
+                product_count = Product.query.count()
+                
+                if product_count == 0:
+                    print("No products found. Seeding database...")
+                    # Import and use seed data
+                    from enhanced_seed_data import get_electronics_products
+                    products_data = get_electronics_products()
+                    
+                    # Add products
+                    for product_data in products_data:
+                        product = Product(**product_data)
+                        db.session.add(product)
+                    
+                    # Commit changes
+                    db.session.commit()
+                    print(f"Successfully seeded database with {len(products_data)} products!")
+                else:
+                    print(f"Database already contains {product_count} products.")
+                    
+            except Exception as e:
+                print(f"Error during database initialization: {str(e)}")
+                # Continue with application startup even if seeding fails
     
     return app
