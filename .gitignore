@@ -43,6 +43,11 @@ instance/
 .env.test.local
 .env.production.local
 
+# Keep environment examples
+!.env.example
+!.env.development
+!.env.production
+
 # IDE
 .vscode/
 .idea/
