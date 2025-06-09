@@ -34,4 +34,8 @@ databases:
   - name: ecommerce-db
     databaseName: ecommerce
     user: ecommerce_user
+    plan: free
+
+redis:
+  - name: ecommerce-redis
     plan: free 
