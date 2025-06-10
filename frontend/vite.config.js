@@ -5,6 +5,8 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    port: 5173,
+    host: true,
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
@@ -27,15 +29,12 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 1000
   },  preview: {
-    port: 4173,
+    port: process.env.PORT || 4173,
     host: true,
     allowedHosts: [
       'ecommerce-frontend-1qfw.onrender.com',
-      '.onrender.com'
+      '.onrender.com',
+      '*'
     ]
-  },
-  server: {
-    port: 5173,
-    host: true
   }
 })

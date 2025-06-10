@@ -40,20 +40,6 @@ export default function Chat() {
       setMessages([welcomeMessage]);
       setSuggestions(generateSuggestions(welcomeMessage, 'greeting'));
     }
-
-          const { access_token } = response.data;
-          localStorage.setItem('access_token', access_token);
-          api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-        }
-      } catch (error) {
-        console.error('Auth error:', error);
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        navigate('/login', { state: { from: '/chat' } });
-      }
-    };
-
-    checkAuth();
   }, [user, navigate]);
 
   const generateSuggestions = (lastMessage, conversationType, products = []) => {
@@ -235,22 +221,11 @@ export default function Chat() {
       setError('Please log in to continue chatting.');
       navigate('/login', { state: { from: '/chat' } });
       return;
-    }
-
-    try {
+    }    try {
       const token = localStorage.getItem('access_token');
       if (!token) {
         throw new Error('Not authenticated');
       }
-
-      // Add user message to chat immediately
-      const userMessage = {
-        message: messageText,
-        is_bot: false,
-        created_at: new Date().toISOString(),
-        products: []
-      };
-      setMessages(prev => [...prev, userMessage]);
 
       // Clear suggestions while waiting for response
       setSuggestions([]);
@@ -516,9 +491,7 @@ export default function Chat() {
               </div>
             </div>
           </div>
-        )}
-        <div ref={messagesEndRef} className="h-4" />
-        <div ref={messagesEndRef} />
+        )}        <div ref={messagesEndRef} className="h-4" />
       </div>      {/* Enhanced Conversation Starters */}
       {messages.length === 1 && suggestions.length === 0 && (
         <div className="px-6 pb-6">

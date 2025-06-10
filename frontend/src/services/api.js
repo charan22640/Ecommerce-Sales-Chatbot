@@ -20,7 +20,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  withCredentials: true,
+  withCredentials: true, // Enable credentials for both development and production
 });
 
 // Request interceptor for adding auth token
@@ -51,6 +51,17 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Log error details in production
+    if (import.meta.env.PROD) {
+      console.error('API Error:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        message: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+
     // Don't retry if it's already a refresh token request or we don't have a refresh token
     if (originalRequest.url === '/auth/refresh' || !localStorage.getItem('refresh_token')) {
       return Promise.reject(error);
@@ -63,45 +74,53 @@ api.interceptors.response.use(
 
       try {
         const refresh_token = localStorage.getItem('refresh_token');
-        if (!refresh_token) throw new Error('No refresh token');          try {
-            const response = await axios.post(
-              `${api.defaults.baseURL}/auth/refresh`,
-              {},
-              {
-                headers: { Authorization: `Bearer ${localStorage.getItem('refresh_token')}` }
-              }
-            );
+        if (!refresh_token) throw new Error('No refresh token');
 
-            const { access_token } = response.data;
-            
-            if (!access_token) {
-              throw new Error('No access token received');
-            }
-
-            localStorage.setItem('access_token', access_token);
-            api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-            originalRequest.headers.Authorization = `Bearer ${access_token}`;
-
-            // Process any queued requests
-            processQueue(null, access_token);
-            
-            return api(originalRequest);
-          } catch (refreshError) {
-            processQueue(refreshError, null);
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-            window.location.href = '/login?session_expired=true';
-            return Promise.reject(refreshError);
-          } finally {
-            isRefreshing = false;
+        const response = await axios.post(
+          `${api.defaults.baseURL}/auth/refresh`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${refresh_token}` }
           }
+        );
+
+        const { access_token } = response.data;
+        
+        if (!access_token) {
+          throw new Error('No access token received');
+        }
+
+        localStorage.setItem('access_token', access_token);
+        api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+        originalRequest.headers.Authorization = `Bearer ${access_token}`;
+
+        // Process any queued requests
+        processQueue(null, access_token);
+        
+        return api(originalRequest);
       } catch (refreshError) {
-        // If refresh token fails, clear tokens and redirect to login
+        processQueue(refreshError, null);
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
+        localStorage.removeItem('cart_cache');
+        
+        // Only redirect for auth errors if not already on auth pages
+        if (!originalRequest.url.includes('auth')) {
+          window.location.href = `/login?error=${encodeURIComponent(refreshError.message)}&redirect=${encodeURIComponent(window.location.pathname)}`;
+        }
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
+    }
+
+    // Handle other error cases
+    if (error.response?.status === 403) {
+      // Handle forbidden errors
+      console.error('Access forbidden:', error.response.data);
+    } else if (error.response?.status === 500) {
+      // Handle server errors
+      console.error('Server error:', error.response.data);
     }
 
     return Promise.reject(error);

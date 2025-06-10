@@ -75,14 +75,31 @@ class ProductionConfig(Config):
         "https://ecommerce-frontend-1qfw.onrender.com",
         "https://*.onrender.com"
     ]
-    
-    # Database - Ensure production uses the correct database URL
+      # Database - Ensure production uses the correct database URL
     @classmethod
     def init_app(cls, app):
         Config.init_app(app)
         # Ensure database URL is set for production
         if not app.config['SQLALCHEMY_DATABASE_URI']:
             raise ValueError("DATABASE_URL must be set in production")
+        
+        # Set up production logging
+        import logging
+        from logging.handlers import RotatingFileHandler
+        import os
+        
+        if not os.path.exists('logs'):
+            os.mkdir('logs')
+            
+        file_handler = RotatingFileHandler('logs/ecommerce.log', maxBytes=10240, backupCount=10)
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        ))
+        file_handler.setLevel(logging.INFO)
+        app.logger.addHandler(file_handler)
+        
+        app.logger.setLevel(logging.INFO)
+        app.logger.info('Ecommerce Backend startup')
     
     # Redis
     REDIS_URL = os.getenv('REDIS_URL')

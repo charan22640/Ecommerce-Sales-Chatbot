@@ -76,6 +76,20 @@ def create_app(config_name='default'):
             response.headers['X-XSS-Protection'] = '1; mode=block'
         return response
     
+    # Add security headers in production
+    @app.after_request
+    def add_security_headers(response):
+        if app.config['ENV'] == 'production':
+            # Security headers
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+            response.headers['X-Content-Type-Options'] = 'nosniff'
+            response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+            response.headers['X-XSS-Protection'] = '1; mode=block'
+            response.headers['Content-Security-Policy'] = "default-src 'self' https: data: blob: 'unsafe-inline'"
+            response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+            response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+        return response
+    
     # Add OPTIONS handler for preflight requests
     @app.before_request
     def handle_preflight():
@@ -146,6 +160,46 @@ def create_app(config_name='default'):
                 'database_status': 'error',
                 'timestamp': str(datetime.utcnow())
             }), 500
+    
+    # Health check route
+    @app.route('/health')
+    def health_check():
+        try:
+            # Check database connection
+            db.session.execute('SELECT 1')
+            db_status = 'healthy'
+        except Exception as e:
+            app.logger.error(f'Database health check failed: {str(e)}')
+            db_status = 'unhealthy'
+
+        # Check Redis connection if used
+        redis_status = 'not_configured'
+        if app.config.get('REDIS_URL'):
+            try:
+                from redis import Redis
+                redis_client = Redis.from_url(app.config['REDIS_URL'])
+                redis_client.ping()
+                redis_status = 'healthy'
+            except Exception as e:
+                app.logger.error(f'Redis health check failed: {str(e)}')
+                redis_status = 'unhealthy'
+
+        response = {
+            'status': 'ok',
+            'timestamp': datetime.utcnow().isoformat(),
+            'components': {
+                'database': db_status,
+                'redis': redis_status
+            },
+            'version': '1.0.0',
+            'environment': app.config.get('FLASK_ENV', 'production')
+        }
+        
+        # If any component is unhealthy, return 503
+        if 'unhealthy' in [db_status, redis_status]:
+            return jsonify(response), 503
+            
+        return jsonify(response)
     
     # Add database seeding for production
     if config_name == 'production':
