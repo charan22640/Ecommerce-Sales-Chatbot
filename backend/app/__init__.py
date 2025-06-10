@@ -4,6 +4,7 @@ from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from .models.user import db
 from config import config
+from datetime import datetime
 
 def create_app(config_name='default'):
     app = Flask(__name__)
@@ -124,7 +125,27 @@ def create_app(config_name='default'):
     # Add health check route
     @app.route('/')
     def health_check():
-        return jsonify({'status': 'ok', 'message': 'E-commerce API is running'})
+        try:
+            from .models.product import Product
+            product_count = Product.query.count()
+            categories = db.session.query(Product.category).distinct().all()
+            categories = [cat[0] for cat in categories]
+            
+            return jsonify({
+                'status': 'ok',
+                'message': 'E-commerce API is running',
+                'database_status': 'connected',
+                'products_count': product_count,
+                'categories': categories,
+                'timestamp': str(datetime.utcnow())
+            })
+        except Exception as e:
+            return jsonify({
+                'status': 'error',
+                'message': str(e),
+                'database_status': 'error',
+                'timestamp': str(datetime.utcnow())
+            }), 500
     
     # Add database seeding for production
     if config_name == 'production':

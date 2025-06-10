@@ -29,6 +29,10 @@ api.interceptors.request.use(
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else if (!config.url.includes('/auth/login') && !config.url.includes('/auth/register')) {
+      // Redirect to login if no token and trying to access protected route
+      window.location.href = '/login';
+      return Promise.reject('No auth token');
     }
     // Don't modify Content-Type for FormData (multipart/form-data)
     if (config.data instanceof FormData) {
@@ -47,29 +51,50 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // If error is 401 and we haven't tried to refresh token yet and there's a refresh token
-    if (error.response?.status === 401 && !originalRequest._retry && !isRefreshing && localStorage.getItem('refresh_token')) {
+    // Don't retry if it's already a refresh token request or we don't have a refresh token
+    if (originalRequest.url === '/auth/refresh' || !localStorage.getItem('refresh_token')) {
+      return Promise.reject(error);
+    }
+
+    // Handle 401 errors with token refresh
+    if (error.response?.status === 401 && !originalRequest._retry && !isRefreshing) {
       originalRequest._retry = true;
       isRefreshing = true;
 
       try {
         const refresh_token = localStorage.getItem('refresh_token');
-        if (!refresh_token) throw new Error('No refresh token');
+        if (!refresh_token) throw new Error('No refresh token');          try {
+            const response = await axios.post(
+              `${api.defaults.baseURL}/auth/refresh`,
+              {},
+              {
+                headers: { Authorization: `Bearer ${localStorage.getItem('refresh_token')}` }
+              }
+            );
 
-        const response = await axios.post(
-          `${api.defaults.baseURL}/auth/refresh`,
-          {},
-          {
-            headers: { Authorization: `Bearer ${refresh_token}` }
+            const { access_token } = response.data;
+            
+            if (!access_token) {
+              throw new Error('No access token received');
+            }
+
+            localStorage.setItem('access_token', access_token);
+            api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+            originalRequest.headers.Authorization = `Bearer ${access_token}`;
+
+            // Process any queued requests
+            processQueue(null, access_token);
+            
+            return api(originalRequest);
+          } catch (refreshError) {
+            processQueue(refreshError, null);
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            window.location.href = '/login?session_expired=true';
+            return Promise.reject(refreshError);
+          } finally {
+            isRefreshing = false;
           }
-        );
-
-        const { access_token } = response.data;
-        localStorage.setItem('access_token', access_token);
-        api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-        originalRequest.headers.Authorization = `Bearer ${access_token}`;
-
-        return api(originalRequest);
       } catch (refreshError) {
         // If refresh token fails, clear tokens and redirect to login
         localStorage.removeItem('access_token');

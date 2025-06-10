@@ -22,30 +22,24 @@ export default function Chat() {
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const navigate = useNavigate();  useEffect(() => {
+    if (!user) {
+      navigate('/login', { state: { from: '/chat' } });
+      return;
+    }
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem('access_token');
-      if (!token || !user) {
-        navigate('/login', { state: { from: '/chat' } });
-        return;
-      }
-
-      try {
-        // Verify token is valid
-        const decoded = jwtDecode(token);
-        if (decoded.exp * 1000 <= Date.now()) {
-          // Token is expired
-          const refresh_token = localStorage.getItem('refresh_token');
-          if (!refresh_token) {
-            throw new Error('No refresh token available');
-          }
-
-          // Try to refresh the token
-          const response = await api.post('/auth/refresh', {}, {
-            headers: { Authorization: `Bearer ${refresh_token}` }
-          });
+    // Initialize welcome message if no messages exist
+    if (messages.length === 0) {
+      const welcomeMessage = {
+        message: "Welcome to NexTechAI! 🚀\n\nI'm Alex, your personal AI shopping assistant. How can I help you today?",
+        is_bot: true,
+        created_at: new Date().toISOString(),
+        products: [],
+        conversation_type: 'greeting'
+      };
+      setMessages([welcomeMessage]);
+      setSuggestions(generateSuggestions(welcomeMessage, 'greeting'));
+    }
 
           const { access_token } = response.data;
           localStorage.setItem('access_token', access_token);
@@ -225,6 +219,23 @@ export default function Chat() {
     if (!suggestionText) setInput('');
     setLoading(true);
     setError(null);
+
+    // Add user message immediately for better UX
+    const userMessage = {
+      message: messageText,
+      is_bot: false,
+      created_at: new Date().toISOString(),
+      products: []
+    };
+    setMessages(prev => [...prev, userMessage]);
+
+    // Check auth token
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      setError('Please log in to continue chatting.');
+      navigate('/login', { state: { from: '/chat' } });
+      return;
+    }
 
     try {
       const token = localStorage.getItem('access_token');

@@ -14,22 +14,22 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
+  const [loading, setLoading] = useState(true);  useEffect(() => {
     const checkAndRefreshToken = async () => {
       const token = localStorage.getItem('access_token');
       const refreshToken = localStorage.getItem('refresh_token');
       
       if (!token) {
         setLoading(false);
+        setUser(null);
         return;
       }
 
       try {
         const decoded = jwtDecode(token);
         
-        // If token is expired but we have a refresh token, try to refresh
-        if (decoded.exp * 1000 <= Date.now() && refreshToken) {
+        // If token will expire in next 5 minutes, try to refresh
+        if (decoded.exp * 1000 <= Date.now() + (5 * 60 * 1000) && refreshToken) {
           try {
             const response = await api.post('/auth/refresh', {}, {
               headers: { Authorization: `Bearer ${refreshToken}` }
